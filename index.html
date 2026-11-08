@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>CanchaLab Pod</title>
+<style>
+  :root {
+    --fondo: #0f1115; --panel: #1a1d24; --texto: #f2f3f5; --tenue: #8b909a;
+    --ok: #2fbf71; --medio: #f0b429; --mal: #e5484d; --azul: #3e8ef7;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: var(--fondo); color: var(--texto);
+    font: 17px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 480px; margin: 0 auto; padding: 16px 16px 32px;
+    display: flex; flex-direction: column; gap: 12px; min-height: 100%; }
+  header { display: flex; justify-content: space-between; align-items: baseline; }
+  h1 { font-size: 18px; margin: 0; font-weight: 600; }
+  #conexion { font-size: 14px; color: var(--tenue); }
+  #conexion.si { color: var(--ok); }
+  .panel { background: var(--panel); border-radius: 14px; padding: 14px 16px; }
+  #gps { text-align: center; padding: 20px 16px; border: 3px solid transparent; }
+  #gps.ok { border-color: var(--ok); } #gps.medio { border-color: var(--medio); }
+  #gps.mal { border-color: var(--mal); }
+  #sats { font-size: 88px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  #satsTxt { color: var(--tenue); font-size: 15px; margin-top: 2px; }
+  #calidad { font-size: 22px; font-weight: 600; margin-top: 10px; }
+  .ok #calidad { color: var(--ok); } .medio #calidad { color: var(--medio); }
+  .mal #calidad { color: var(--mal); }
+  #consejo { font-size: 14px; color: var(--tenue); margin-top: 6px; min-height: 18px; }
+  .fila { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .dato .etq { font-size: 13px; color: var(--tenue); text-transform: uppercase; letter-spacing: .04em; }
+  .dato .val { font-size: 26px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .dato .sub { font-size: 14px; color: var(--tenue); }
+  button { font: inherit; border: 0; border-radius: 14px; color: #fff; cursor: pointer; width: 100%; }
+  #conectar { background: var(--azul); padding: 18px; font-size: 20px; font-weight: 600; }
+  #marcar { background: var(--ok); padding: 34px 16px; font-size: 30px; font-weight: 700; }
+  #marcar:active { filter: brightness(.85); transform: scale(.99); }
+  #marcar:disabled, #conectar:disabled { background: #343944; color: var(--tenue); }
+  #marcas { list-style: none; margin: 6px 0 0; padding: 0; font-size: 15px; color: var(--tenue);
+    max-height: 30vh; overflow: auto; }
+  #marcas li { padding: 4px 0; border-top: 1px solid #262a33; }
+  #marcas li:first-child { border-top: 0; }
+  #aviso { font-size: 14px; color: var(--medio); }
+  #viejo { font-size: 13px; color: var(--mal); text-align: center; min-height: 16px; }
+  .oculto { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>CanchaLab Pod</h1>
+    <span id="conexion">desconectado</span>
+  </header>
+
+  <div id="aviso" class="oculto"></div>
+
+  <button id="conectar">Conectar al pod</button>
+
+  <section id="vivo" class="oculto">
+    <div id="gps" class="panel">
+      <div id="sats">–</div>
+      <div id="satsTxt">satélites</div>
+      <div id="calidad">esperando datos…</div>
+      <div id="consejo"></div>
+    </div>
+  </section>
+
+  <section id="datos" class="fila oculto">
+    <div class="panel dato">
+      <div class="etq">Grabando</div>
+      <div class="val" id="tiempo">–</div>
+      <div class="sub" id="sesion"></div>
+    </div>
+    <div class="panel dato">
+      <div class="etq">Batería</div>
+      <div class="val" id="bateria">–</div>
+      <div class="sub" id="batTxt"></div>
+    </div>
+  </section>
+
+  <div id="viejo"></div>
+
+  <button id="marcar" class="oculto" disabled>MARCAR</button>
+
+  <section id="listaMarcas" class="panel oculto">
+    <div class="dato"><span class="etq">Marcas: </span><b id="nMarcas">0</b></div>
+    <ul id="marcas"></ul>
+  </section>
+</main>
+
+<script>
+// Mismos UUID que src/capsule/main.cpp (seccion Bluetooth).
+const SERVICIO = "6e0c0001-c4a1-4c4b-9a5e-63616e636861";
+const ESTADO   = "6e0c0002-c4a1-4c4b-9a5e-63616e636861";
+const COMANDO  = "6e0c0003-c4a1-4c4b-9a5e-63616e636861";
+
+const $ = (id) => document.getElementById(id);
+let disp = null, chEstado = null, chComando = null;
+let ultimoDato = 0, marcasPod = null, reintentando = false, wakeLock = null;
+
+function avisar(txt) { $("aviso").textContent = txt; $("aviso").classList.toggle("oculto", !txt); }
+
+if (!navigator.bluetooth) {
+  avisar("Este navegador no tiene Bluetooth web. En el iPhone abrí esta página en Bluefy.");
+  $("conectar").disabled = true;
+}
+
+function mostrarConexion(si, txt) {
+  $("conexion").textContent = txt || (si ? "conectado" : "desconectado");
+  $("conexion").classList.toggle("si", si);
+  $("marcar").disabled = !si;
+}
+
+// "S0006 03:12 | sat 18 ok h1.2 | 4.02V bien | marcas 2"
+function interpretar(txt) {
+  const m = txt.match(/^(\S+(?: \S+)?) (\d+):(\d+) \| sat (\d+) (\S+(?: FIX)?) h([\d.]+) \| ([\d.]+)V (.+?) \| marcas (\d+)/);
+  if (!m) return null;
+  return { sesion: m[1], min: +m[2], seg: +m[3], sats: +m[4], calidad: m[5],
+           hdop: +m[6], volt: +m[7], bat: m[8], marcas: +m[9] };
+}
+
+function pctBateria(v) {             // curva aproximada de una LiPo en reposo
+  const t = [[4.15,100],[4.05,90],[3.95,78],[3.85,62],[3.75,45],[3.65,25],[3.55,12],[3.40,0]];
+  if (v >= t[0][0]) return 100;
+  for (let i = 1; i < t.length; i++)
+    if (v >= t[i][0]) {
+      const [v1,p1] = t[i-1], [v0,p0] = t[i];
+      return Math.round(p0 + (v - v0) / (v1 - v0) * (p1 - p0));
+    }
+  return 0;
+}
+
+function pintar(e) {
+  ultimoDato = Date.now();
+  $("viejo").textContent = "";
+  const gps = $("gps");
+  gps.classList.remove("ok", "medio", "mal");
+  $("sats").textContent = e.sats;
+  let clase, txt, consejo = "";
+  if (e.calidad === "ok") {
+    if (e.sats >= 10)      { clase = "ok";    txt = "GPS bien"; }
+    else                   { clase = "medio"; txt = "GPS con pocos satélites";
+                             consejo = "Con menos de 10 la distancia sale peor. Esperá al aire libre."; }
+  } else if (e.calidad === "ESTIMADO") {
+    clase = "mal"; txt = "GPS ESTIMADO";
+    consejo = "No está midiendo: repite la última posición. No arranques la prueba.";
+  } else {
+    clase = "mal"; txt = "SIN FIX";
+    consejo = "Todavía no se ubicó. Quedate quieto al aire libre.";
+  }
+  gps.classList.add(clase);
+  $("calidad").textContent = txt + (e.calidad === "ok" ? `  ·  HDOP ${e.hdop.toFixed(1)}` : "");
+  $("consejo").textContent = consejo;
+
+  const graba = e.sesion !== "NO GRABA";
+  $("tiempo").textContent = graba ? `${e.min}:${String(e.seg).padStart(2, "0")}` : "no";
+  $("sesion").textContent = graba ? e.sesion : "el pod no está grabando";
+  $("bateria").textContent = pctBateria(e.volt) + " %";
+  $("batTxt").textContent = `${e.volt.toFixed(2)} V · ${e.bat}`;
+
+  if (marcasPod !== null && e.marcas > marcasPod) {
+    for (let i = marcasPod + 1; i <= e.marcas; i++) anotarMarca(i, e);
+  }
+  marcasPod = e.marcas;
+  $("nMarcas").textContent = e.marcas;
+}
+
+function anotarMarca(n, e) {
+  const li = document.createElement("li");
+  const hora = new Date().toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  li.textContent = `#${n}  ${hora}  ·  sesión ${e.min}:${String(e.seg).padStart(2, "0")}  ·  ${e.sats} sat`;
+  $("marcas").prepend(li);
+}
+
+function alNotificar(ev) {
+  const txt = new TextDecoder().decode(ev.target.value);
+  const e = interpretar(txt);
+  if (e) pintar(e);
+}
+
+async function engancharse() {
+  mostrarConexion(false, "conectando…");
+  const srv = await disp.gatt.connect();
+  const svc = await srv.getPrimaryService(SERVICIO);
+  chEstado = await svc.getCharacteristic(ESTADO);
+  chComando = await svc.getCharacteristic(COMANDO);
+  chEstado.addEventListener("characteristicvaluechanged", alNotificar);
+  await chEstado.startNotifications();
+  try { alNotificar({ target: { value: await chEstado.readValue() } }); } catch (_) {}
+  mostrarConexion(true);
+  ["vivo", "datos", "marcar", "listaMarcas"].forEach((id) => $(id).classList.remove("oculto"));
+  $("conectar").classList.add("oculto");
+  pedirPantallaPrendida();
+}
+
+async function conectar() {
+  avisar("");
+  try {
+    disp = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [SERVICIO] }, { namePrefix: "CanchaLab" }],
+      optionalServices: [SERVICIO],
+    });
+    disp.addEventListener("gattserverdisconnected", alDesconectar);
+    await engancharse();
+  } catch (err) {
+    mostrarConexion(false);
+    if (err.name !== "NotFoundError")      // NotFoundError = cancelo la lista
+      avisar("No se pudo conectar: " + err.message + ". ¿El pod está prendido y grabando (sin USB)?");
+  }
+}
+
+async function alDesconectar() {
+  mostrarConexion(false, "se cortó, reconectando…");
+  if (reintentando) return;
+  reintentando = true;
+  for (let i = 0; i < 30 && disp && !disp.gatt.connected; i++) {
+    try { await engancharse(); break; }
+    catch (_) { await new Promise((r) => setTimeout(r, 2000)); }
+  }
+  reintentando = false;
+  if (!disp.gatt.connected) {
+    mostrarConexion(false);
+    $("conectar").classList.remove("oculto");
+    $("conectar").textContent = "Volver a conectar";
+  }
+}
+
+async function marcar() {
+  if (!chComando) return;
+  $("marcar").disabled = true;
+  try {
+    await chComando.writeValue(new TextEncoder().encode("m"));
+    if (navigator.vibrate) navigator.vibrate(80);
+    $("marcar").textContent = "✓ MARCADO";
+    setTimeout(() => { $("marcar").textContent = "MARCAR"; }, 900);
+  } catch (err) {
+    avisar("No llegó la marca: " + err.message);
+  } finally {
+    setTimeout(() => { $("marcar").disabled = !(disp && disp.gatt.connected); }, 400);
+  }
+}
+
+async function pedirPantallaPrendida() {
+  try { if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); }
+  catch (_) {}
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && disp && disp.gatt.connected) pedirPantallaPrendida();
+});
+
+// Si dejan de llegar datos, avisar: puede ser que el pod se apago o se fue de rango.
+setInterval(() => {
+  if (!ultimoDato) return;
+  const s = Math.round((Date.now() - ultimoDato) / 1000);
+  $("viejo").textContent = s >= 4 ? `sin datos nuevos hace ${s} s` : "";
+}, 1000);
+
+$("conectar").addEventListener("click", conectar);
+$("marcar").addEventListener("click", marcar);
+</script>
+</body>
+</html>
