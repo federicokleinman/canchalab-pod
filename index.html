@@ -121,8 +121,14 @@ function interpretar(txt) {
            hdop: +m[6], volt: +m[7], bat: m[8], marcas: +m[9] };
 }
 
-function pctBateria(v) {             // curva aproximada de una LiPo en reposo
-  const t = [[4.15,100],[4.05,90],[3.95,78],[3.85,62],[3.75,45],[3.65,25],[3.55,12],[3.40,0]];
+// % de TIEMPO restante, no de carga: sale de la descarga completa medida en el
+// pod 1 grabando con GPS a 10 Hz (S0002, 2026-11-05: 2 h 15 min de 4.09 V al
+// corte de 3.40 V). La tension baja rapido al principio y despues se aplana,
+// asi que una tabla lineal exageraba la caida de los primeros minutos.
+const AUTONOMIA_MIN = 135;
+function pctBateria(v) {
+  const t = [[4.05,98],[4.00,94],[3.95,84],[3.90,75],[3.85,67],[3.80,57],[3.75,44],
+             [3.70,37],[3.65,31],[3.60,26],[3.55,18],[3.50,11],[3.45,5],[3.40,0]];
   if (v >= t[0][0]) return 100;
   for (let i = 1; i < t.length; i++)
     if (v >= t[i][0]) {
@@ -157,8 +163,10 @@ function pintar(e) {
   const graba = e.sesion !== "NO GRABA";
   $("tiempo").textContent = graba ? `${e.min}:${String(e.seg).padStart(2, "0")}` : "no";
   $("sesion").textContent = graba ? e.sesion : "el pod no está grabando";
-  $("bateria").textContent = pctBateria(e.volt) + " %";
-  $("batTxt").textContent = `${e.volt.toFixed(2)} V · ${e.bat}`;
+  const pct = pctBateria(e.volt);
+  const resto = Math.round(pct * AUTONOMIA_MIN / 100);
+  $("bateria").textContent = pct + " %";
+  $("batTxt").textContent = `≈ ${Math.floor(resto / 60)} h ${String(resto % 60).padStart(2, "0")} min · ${e.volt.toFixed(2)} V`;
 
   if (marcasPod !== null && e.marcas > marcasPod) {
     for (let i = marcasPod + 1; i <= e.marcas; i++) anotarMarca(i, e);
