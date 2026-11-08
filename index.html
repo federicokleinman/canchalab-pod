@@ -7,124 +7,273 @@
 <title>CanchaLab Pod</title>
 <style>
   :root {
-    --fondo: #0f1115; --panel: #1a1d24; --texto: #f2f3f5; --tenue: #8b909a;
+    --fondo: #0f1115; --panel: #1a1d24; --borde: #262a33; --texto: #f2f3f5; --tenue: #8b909a;
     --ok: #2fbf71; --medio: #f0b429; --mal: #e5484d; --azul: #3e8ef7;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; height: 100%; background: var(--fondo); color: var(--texto);
-    font: 17px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  main { max-width: 480px; margin: 0 auto; padding: 16px 16px 32px;
-    display: flex; flex-direction: column; gap: 12px; min-height: 100%; }
-  header { display: flex; justify-content: space-between; align-items: baseline; }
-  h1 { font-size: 18px; margin: 0; font-weight: 600; }
-  #conexion { font-size: 14px; color: var(--tenue); }
-  #conexion.si { color: var(--ok); }
-  .panel { background: var(--panel); border-radius: 14px; padding: 14px 16px; }
-  #gps { text-align: center; padding: 20px 16px; border: 3px solid transparent; }
-  #gps.ok { border-color: var(--ok); } #gps.medio { border-color: var(--medio); }
-  #gps.mal { border-color: var(--mal); }
-  #sats { font-size: 88px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
-  #satsTxt { color: var(--tenue); font-size: 15px; margin-top: 2px; }
-  #calidad { font-size: 22px; font-weight: 600; margin-top: 10px; }
-  .ok #calidad { color: var(--ok); } .medio #calidad { color: var(--medio); }
-  .mal #calidad { color: var(--mal); }
-  #consejo { font-size: 14px; color: var(--tenue); margin-top: 6px; min-height: 18px; }
-  .fila { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .dato .etq { font-size: 13px; color: var(--tenue); text-transform: uppercase; letter-spacing: .04em; }
-  .dato .val { font-size: 26px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
-  .dato .sub { font-size: 14px; color: var(--tenue); }
-  button { font: inherit; border: 0; border-radius: 14px; color: #fff; cursor: pointer; width: 100%; }
-  #conectar { background: var(--azul); padding: 18px; font-size: 20px; font-weight: 600; }
-  #marcar { background: var(--ok); padding: 34px 16px; font-size: 30px; font-weight: 700; }
-  #marcar:active { filter: brightness(.85); transform: scale(.99); }
-  #marcar:disabled, #conectar:disabled { background: #343944; color: var(--tenue); }
-  #marcas { list-style: none; margin: 6px 0 0; padding: 0; font-size: 15px; color: var(--tenue);
-    max-height: 30vh; overflow: auto; }
-  #marcas li { padding: 4px 0; border-top: 1px solid #262a33; }
-  #marcas li:first-child { border-top: 0; }
-  #aviso { font-size: 14px; color: var(--medio); }
-  #viejo { font-size: 13px; color: var(--mal); text-align: center; min-height: 16px; }
+  html, body { margin: 0; background: var(--fondo); color: var(--texto);
+    font: 17px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 480px; margin: 0 auto; padding: 0 14px 40px; }
+  button { font: inherit; border: 0; border-radius: 14px; color: #fff; cursor: pointer; }
+  button:disabled { background: #343944 !important; color: var(--tenue) !important; }
   .oculto { display: none !important; }
+  .panel { background: var(--panel); border-radius: 14px; padding: 14px 16px; }
+  .tenue { color: var(--tenue); }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--tenue);
+    margin: 22px 2px 8px; font-weight: 600; }
+
+  /* barra de estado fija */
+  #barra { position: sticky; top: 0; z-index: 5; background: var(--fondo);
+    padding: 12px 0 10px; border-bottom: 1px solid var(--borde); }
+  #barraFila { display: flex; align-items: center; gap: 10px; }
+  #satBadge { min-width: 74px; text-align: center; border-radius: 12px; padding: 6px 8px;
+    background: #343944; font-weight: 700; font-size: 22px; line-height: 1.1; }
+  #satBadge small { display: block; font-size: 11px; font-weight: 600; opacity: .85; }
+  #satBadge.ok { background: var(--ok); } #satBadge.medio { background: var(--medio); color: #111; }
+  #satBadge.mal { background: var(--mal); }
+  #barraInfo { flex: 1; font-size: 14px; line-height: 1.35; }
+  #barraInfo b { font-size: 16px; }
+  #conexion { font-size: 13px; color: var(--tenue); }
+  #conexion.si { color: var(--ok); }
+  #alerta { margin-top: 8px; padding: 8px 10px; border-radius: 10px; font-size: 14px;
+    background: rgba(229,72,77,.15); color: #ff8a8d; }
+  #alerta.medio { background: rgba(240,180,41,.15); color: var(--medio); }
+
+  #conectar { width: 100%; background: var(--azul); padding: 18px; font-size: 20px; font-weight: 600; margin-top: 14px; }
+  #aviso { margin-top: 10px; font-size: 14px; color: var(--medio); }
+
+  /* lista de pruebas */
+  .prueba { width: 100%; text-align: left; background: var(--panel); padding: 13px 14px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 12px; }
+  .prueba .nom { flex: 1; font-weight: 600; }
+  .prueba .nom span { display: block; font-weight: 400; font-size: 14px; color: var(--tenue); }
+  .prueba .cuenta { font-size: 13px; color: var(--ok); font-weight: 600; white-space: nowrap; }
+  .prueba.enCurso { outline: 2px solid var(--medio); }
+
+  /* detalle */
+  #volver { background: transparent; color: var(--azul); padding: 14px 0 6px; font-size: 17px; }
+  #dTitulo { font-size: 26px; margin: 4px 0 4px; }
+  #dObjetivo { color: var(--tenue); margin: 0 0 14px; }
+  #dPasos { margin: 0; padding-left: 22px; }
+  #dPasos li { margin-bottom: 8px; }
+  .campo { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .campo label { flex: 1; font-size: 15px; color: var(--tenue); }
+  .campo input { width: 120px; font: inherit; font-size: 18px; padding: 8px 10px; border-radius: 10px;
+    border: 1px solid var(--borde); background: #0f1115; color: var(--texto); text-align: right; }
+  textarea { width: 100%; font: inherit; font-size: 15px; padding: 8px 10px; border-radius: 10px;
+    border: 1px solid var(--borde); background: #0f1115; color: var(--texto); margin-top: 6px; }
+  #dBoton { width: 100%; padding: 30px 16px; font-size: 28px; font-weight: 700; margin-top: 16px; background: var(--ok); }
+  #dBoton.terminar { background: var(--mal); }
+  #dReloj { text-align: center; font-size: 54px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 14px; }
+  #dConfirma { text-align: center; font-size: 14px; min-height: 20px; margin-top: 6px; }
+  #dHechas { margin-top: 16px; font-size: 15px; }
+  #dHechas li { padding: 5px 0; border-top: 1px solid var(--borde); list-style: none; }
+  #dHechas ul { padding: 0; margin: 6px 0 0; }
+  #dAnular { background: transparent; color: var(--mal); padding: 10px 0; font-size: 15px; }
+
+  #marcarLibre { width: 100%; background: #2a2f3a; padding: 16px; font-size: 18px; font-weight: 600; margin-top: 10px; }
+  #registro { font-size: 13px; white-space: pre-wrap; color: var(--tenue); margin: 0; max-height: 40vh; overflow: auto; }
+  .fila2 { display: flex; gap: 8px; margin-top: 10px; }
+  .fila2 button { flex: 1; background: #2a2f3a; padding: 12px; font-size: 15px; }
 </style>
 </head>
 <body>
 <main>
-  <header>
-    <h1>CanchaLab Pod</h1>
-    <span id="conexion">desconectado</span>
-  </header>
-
-  <div id="aviso" class="oculto"></div>
+  <div id="barra">
+    <div id="barraFila">
+      <div id="satBadge">–<small>sat</small></div>
+      <div id="barraInfo">
+        <div><b id="bTiempo">CanchaLab Pod</b> <span id="bSesion" class="tenue"></span></div>
+        <div id="bBateria" class="tenue"></div>
+        <div id="conexion">desconectado</div>
+      </div>
+    </div>
+    <div id="alerta" class="oculto"></div>
+  </div>
 
   <button id="conectar">Conectar al pod</button>
+  <div id="aviso" class="oculto"></div>
 
-  <section id="vivo" class="oculto">
-    <div id="gps" class="panel">
-      <div id="sats">–</div>
-      <div id="satsTxt">satélites</div>
-      <div id="calidad">esperando datos…</div>
-      <div id="consejo"></div>
+  <!-- vista lista -->
+  <section id="vLista">
+    <div id="lista"></div>
+    <h2>Otros</h2>
+    <button id="marcarLibre" disabled>Marca suelta</button>
+    <h2>Registro de hoy</h2>
+    <div class="panel">
+      <pre id="registro">todavía nada</pre>
+      <div class="fila2">
+        <button id="copiar">Copiar registro</button>
+        <button id="borrar">Borrar registro</button>
+      </div>
     </div>
   </section>
 
-  <section id="datos" class="fila oculto">
-    <div class="panel dato">
-      <div class="etq">Grabando</div>
-      <div class="val" id="tiempo">–</div>
-      <div class="sub" id="sesion"></div>
+  <!-- vista detalle -->
+  <section id="vDetalle" class="oculto">
+    <button id="volver">‹ Pruebas</button>
+    <h1 id="dTitulo"></h1>
+    <p id="dObjetivo"></p>
+    <div class="panel"><ol id="dPasos"></ol></div>
+    <div id="dCampos"></div>
+    <textarea id="dNota" rows="2" placeholder="Nota (opcional): algo que salió distinto"></textarea>
+    <div id="dReloj" class="oculto">0:00</div>
+    <button id="dBoton" disabled>COMENZAR</button>
+    <div id="dConfirma"></div>
+    <div id="dHechas" class="oculto">
+      <b>Hechas hoy</b>
+      <ul id="dHechasLista"></ul>
+      <button id="dAnular">Anular la última (salió mal)</button>
     </div>
-    <div class="panel dato">
-      <div class="etq">Batería</div>
-      <div class="val" id="bateria">–</div>
-      <div class="sub" id="batTxt"></div>
-    </div>
-  </section>
-
-  <div id="viejo"></div>
-
-  <button id="marcar" class="oculto" disabled>MARCAR</button>
-
-  <section id="listaMarcas" class="panel oculto">
-    <div class="dato"><span class="etq">Marcas: </span><b id="nMarcas">0</b></div>
-    <ul id="marcas"></ul>
   </section>
 </main>
 
 <script>
-// Mismos UUID que src/capsule/main.cpp (seccion Bluetooth).
+// ---------------------------------------------------------------------------
+// Catalogo de pruebas. El "id" (1-63) es lo que queda grabado en la sesion del
+// pod (evento 64+id al empezar, 128+id al terminar, 192+id si se anula), asi
+// que NO se cambia ni se reusa un id: una prueba nueva lleva un numero nuevo.
+// La "verdad" es contra lo que se compara la medicion al analizar.
+// ---------------------------------------------------------------------------
+const VUELTA_PLAZA_M = 313.32;    // Plaza 12, medida en Google Maps
+const CATALOGO = [
+  { grupo: "Antes de empezar: dónde va el pod" },
+  { id: 1, nombre: "GPS en la mano", corto: "2 min quieto", duracion: 120,
+    objetivo: "Cuántos satélites ve sin nada que lo tape. Es la referencia para las otras.",
+    pasos: ["Parate en un lugar abierto, lejos de árboles y paredes.",
+            "Sostené el pod en la mano, a la altura del pecho, con el GPS hacia arriba.",
+            "Tocá COMENZAR y quedate quieto. Termina sola a los 2 minutos."] },
+  { id: 2, nombre: "GPS en el bolsillo", corto: "2 min quieto", duracion: 120,
+    objetivo: "Cuánto pierde el GPS dentro del bolsillo trasero, contra la prueba en la mano.",
+    pasos: ["En el mismo lugar, guardá el pod en el bolsillo trasero con el GPS hacia afuera.",
+            "Tocá COMENZAR y quedate quieto, parado. Termina sola a los 2 minutos."] },
+  { id: 3, nombre: "GPS en el elástico", corto: "2 min quieto", duracion: 120,
+    objetivo: "El pod en el elástico del short, al costado de la cadera.",
+    pasos: ["Poné el pod en el elástico del short, al costado, con el GPS hacia afuera.",
+            "Tocá COMENZAR y quedate quieto. Termina sola a los 2 minutos."] },
+  { id: 4, nombre: "GPS en la espalda", corto: "2 min quieto", duracion: 120,
+    objetivo: "Entre los omóplatos, que es donde lo llevan los GPS profesionales.",
+    pasos: ["Poné el pod entre los omóplatos: debajo de una remera ajustada o en una mochila chica.",
+            "Tocá COMENZAR y quedate quieto. Termina sola a los 2 minutos."] },
+
+  { grupo: "Recta de 100 m" },
+  { id: 10, nombre: "Caminar", corto: "A→B→A dos veces · 400 m", verdad: { m: 400 },
+    objetivo: "Distancia caminando, donde el GPS da de menos.",
+    pasos: ["Parate en la punta A de la recta y quedate quieto unos segundos.",
+            "Tocá COMENZAR y caminá a ritmo normal hasta B, volvé a A, otra vez a B y de nuevo a A.",
+            "Pisá cada punta: el giro tiene que ser sobre la marca.",
+            "En A, tocá TERMINAR."] },
+  { id: 11, nombre: "Trote", corto: "A→B→A dos veces · 400 m", verdad: { m: 400 },
+    objetivo: "Distancia trotando.",
+    pasos: ["Desde A, quieto unos segundos.",
+            "Tocá COMENZAR y trotá A→B→A→B→A, girando sobre las marcas.",
+            "En A, tocá TERMINAR."] },
+  { id: 12, nombre: "Pique", corto: "40 m a fondo y trote hasta B · 100 m", verdad: { m: 100 },
+    objetivo: "Velocidad máxima, sprint y distancia a alta velocidad. Hacela 3 veces.",
+    pasos: ["Desde A, quieto unos segundos.",
+            "Tocá COMENZAR, guardá el celular y salí a fondo unos 40 m. Después seguí trotando hasta B.",
+            "En B, tocá TERMINAR.",
+            "Volvé caminando a A sin apurarte (eso no es parte de la prueba) y repetí."] },
+  { id: 13, nombre: "Cambios de ritmo", corto: "A→B alternando · 100 m", verdad: { m: 100 },
+    objetivo: "Aceleraciones y frenadas, como en un partido.",
+    pasos: ["Desde A, quieto unos segundos.",
+            "Tocá COMENZAR y andá hasta B alternando: unos 10 m trotando, unos 10 m a fondo, otra vez trote…",
+            "En B, tocá TERMINAR."] },
+
+  { grupo: "Vuelta a la plaza" },
+  { id: 20, nombre: "Vuelta caminando", corto: `${VUELTA_PLAZA_M} m`, verdad: { m: VUELTA_PLAZA_M },
+    objetivo: "Distancia con curvas y esquinas.",
+    pasos: ["Andá a la esquina donde empieza el recorrido que mediste en el mapa.",
+            "Tocá COMENZAR y caminá una vuelta por el mismo borde de la vereda, sin cortar esquinas.",
+            "Al volver a la misma esquina, tocá TERMINAR."] },
+  { id: 21, nombre: "Vuelta trotando", corto: `${VUELTA_PLAZA_M} m · hacela 2 veces`, verdad: { m: VUELTA_PLAZA_M },
+    objetivo: "Distancia con curvas a más velocidad.",
+    pasos: ["Desde la esquina de inicio, tocá COMENZAR.",
+            "Trotá una vuelta por el mismo recorrido, sin cortar esquinas.",
+            "En la esquina, tocá TERMINAR. Descansá y repetila."] },
+
+  { grupo: "Movimientos de fútbol" },
+  { id: 30, nombre: "Idas y vueltas 10 m", corto: "5 idas y vueltas · 100 m", verdad: { m: 100 },
+    objetivo: "Giros de 180°, la situación donde más se equivoca un GPS.",
+    pasos: ["Marcá dos puntos a 10 m. Usá las marcas de la recta, o 2 mochilas o botellas.",
+            "Tocá COMENZAR y trotá rápido de un punto al otro: 5 idas y 5 vueltas, frenando y girando en cada punto.",
+            "Al terminar la quinta vuelta, tocá TERMINAR."],
+    campos: [{ k: "m", etiqueta: "Distancia total (m)", valor: 100 }] },
+  { id: 31, nombre: "5-10-5", corto: "test de agilidad · 20 m", verdad: { m: 20 },
+    objetivo: "Cambios de dirección cortos y explosivos. Hacela 3 veces.",
+    pasos: ["Marcá 3 puntos en línea: izquierda, centro y derecha, a 5 m uno de otro.",
+            "Parate en el centro. Tocá COMENZAR.",
+            "Corré 5 m a la izquierda, después 10 m hasta la derecha y volvé 5 m al centro, todo a fondo.",
+            "En el centro, tocá TERMINAR."] },
+
+  { grupo: "Saltos" },
+  { id: 40, nombre: "Saltos verticales", corto: "10 saltos · hacela 3 veces", verdad: { saltos: 10 },
+    objetivo: "Si cuenta bien los saltos. Si alguien te filma en cámara lenta, también la altura.",
+    pasos: ["Parado en el lugar, quieto unos segundos. Tocá COMENZAR.",
+            "Hacé 10 saltos verticales con los dos pies, lo más alto que puedas, con 2 o 3 segundos entre uno y otro.",
+            "Si te filman, que sea de costado, en cámara lenta, con los pies a la vista.",
+            "Tocá TERMINAR. Si hiciste otra cantidad, corregila abajo."],
+    campos: [{ k: "saltos", etiqueta: "Saltos que hiciste", valor: 10 }] },
+  { id: 41, nombre: "Control: correr sin saltar", corto: "1 min · tiene que contar 0", verdad: { saltos: 0 },
+    duracion: 60,
+    objetivo: "Que no cuente una zancada larga como salto.",
+    pasos: ["Tocá COMENZAR.",
+            "Durante 1 minuto trotá y metele 3 o 4 piques cortos, pero sin saltar nunca.",
+            "Termina sola al minuto."] },
+
+  { grupo: "Velocidad con video" },
+  { id: 50, nombre: "Pique lanzado 20 m", corto: "con alguien que filme", verdad: { m: 20 },
+    objetivo: "La velocidad real, para saber si los km/h del pod son verdad.",
+    pasos: ["Marcá dos puntos a 20 m: marca 1 y marca 2. Antes de la marca 1 tiene que haber otros 20 m para tomar carrera.",
+            "Quien filma se para al costado, a la mitad, lejos, y graba en cámara lenta con las dos marcas en el cuadro.",
+            "Tocá COMENZAR. Arrancá 20 m antes de la marca 1 y llegá lanzado: pasá las dos marcas a fondo.",
+            "Frená después de la marca 2 y tocá TERMINAR.",
+            "Más tarde, con el video, anotá abajo los segundos entre las dos marcas (lo podés completar en casa)."],
+    campos: [{ k: "seg_video", etiqueta: "Segundos entre marcas (video)", valor: "" }] },
+
+  { grupo: "Libre" },
+  { id: 60, nombre: "Prueba libre", corto: "cualquier otra cosa",
+    objetivo: "Para algo que no está en la lista. Escribí en la nota qué hiciste.",
+    pasos: ["Escribí la nota, tocá COMENZAR, hacé la prueba y tocá TERMINAR."] },
+];
+const PRUEBAS = CATALOGO.filter((p) => p.id);
+const porId = Object.fromEntries(PRUEBAS.map((p) => [p.id, p]));
+
+// ---------------------------------------------------------------------------
+// Bluetooth: mismos UUID que src/capsule/main.cpp
+// ---------------------------------------------------------------------------
 const SERVICIO = "6e0c0001-c4a1-4c4b-9a5e-63616e636861";
 const ESTADO   = "6e0c0002-c4a1-4c4b-9a5e-63616e636861";
 const COMANDO  = "6e0c0003-c4a1-4c4b-9a5e-63616e636861";
 
 const $ = (id) => document.getElementById(id);
-let disp = null, chEstado = null, chComando = null;
-let ultimoDato = 0, marcasPod = null, reintentando = false, wakeLock = null;
+let disp = null, chEstado = null, chComando = null, reintentando = false, wakeLock = null;
+let ultimo = null, ultimoMs = 0;          // ultimo estado del pod
+let enCurso = null;                       // { id, desdeMs, inicioPod, sesion }
+let abierta = null;                       // prueba en la vista detalle
+let autoFin = null;
+
+// registro persistente (sobrevive a recargar la pagina)
+const CLAVE = "canchalab-registro-v1";
+let registro = JSON.parse(localStorage.getItem(CLAVE) || "[]");
+function guardar() { localStorage.setItem(CLAVE, JSON.stringify(registro)); }
 
 function avisar(txt) { $("aviso").textContent = txt; $("aviso").classList.toggle("oculto", !txt); }
-
 if (!navigator.bluetooth) {
   avisar("Este navegador no tiene Bluetooth web. En el iPhone abrí esta página en Bluefy.");
   $("conectar").disabled = true;
 }
 
-function mostrarConexion(si, txt) {
-  $("conexion").textContent = txt || (si ? "conectado" : "desconectado");
-  $("conexion").classList.toggle("si", si);
-  $("marcar").disabled = !si;
-}
-
-// "S0006 03:12 | sat 18 ok h1.2 | 4.02V bien | marcas 2"
+// "S0006 03:12 | sat 18 ok h1.2 | 4.02V bien | marcas 2 | ult s12"
 function interpretar(txt) {
   const m = txt.match(/^(\S+(?: \S+)?) (\d+):(\d+) \| sat (\d+) (\S+(?: FIX)?) h([\d.]+) \| ([\d.]+)V (.+?) \| marcas (\d+)/);
   if (!m) return null;
-  return { sesion: m[1], min: +m[2], seg: +m[3], sats: +m[4], calidad: m[5],
+  return { sesion: m[1], seg: +m[2] * 60 + +m[3], sats: +m[4], calidad: m[5],
            hdop: +m[6], volt: +m[7], bat: m[8], marcas: +m[9] };
 }
+const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
-// % de TIEMPO restante, no de carga: sale de la descarga completa medida en el
-// pod 1 grabando con GPS a 10 Hz (S0002, 2026-11-05: 2 h 15 min de 4.09 V al
-// corte de 3.40 V). La tension baja rapido al principio y despues se aplana,
-// asi que una tabla lineal exageraba la caida de los primeros minutos.
+// % de TIEMPO restante segun la descarga completa medida (S0002, 2 h 15 min).
 const AUTONOMIA_MIN = 135;
 function pctBateria(v) {
   const t = [[4.05,98],[4.00,94],[3.95,84],[3.90,75],[3.85,67],[3.80,57],[3.75,44],
@@ -138,56 +287,65 @@ function pctBateria(v) {
   return 0;
 }
 
-function pintar(e) {
-  ultimoDato = Date.now();
-  $("viejo").textContent = "";
-  const gps = $("gps");
-  gps.classList.remove("ok", "medio", "mal");
-  $("sats").textContent = e.sats;
-  let clase, txt, consejo = "";
-  if (e.calidad === "ok") {
-    if (e.sats >= 10)      { clase = "ok";    txt = "GPS bien"; }
-    else                   { clase = "medio"; txt = "GPS con pocos satélites";
-                             consejo = "Con menos de 10 la distancia sale peor. Esperá al aire libre."; }
-  } else if (e.calidad === "ESTIMADO") {
-    clase = "mal"; txt = "GPS ESTIMADO";
-    consejo = "No está midiendo: repite la última posición. No arranques la prueba.";
-  } else {
-    clase = "mal"; txt = "SIN FIX";
-    consejo = "Todavía no se ubicó. Quedate quieto al aire libre.";
-  }
-  gps.classList.add(clase);
-  $("calidad").textContent = txt + (e.calidad === "ok" ? `  ·  HDOP ${e.hdop.toFixed(1)}` : "");
-  $("consejo").textContent = consejo;
+function calidadGps(e) {
+  if (e.calidad === "ESTIMADO") return ["mal", "GPS ESTIMADO: no está midiendo. No arranques una prueba."];
+  if (e.calidad !== "ok")       return ["mal", "Sin fix todavía. Quedate quieto al aire libre."];
+  if (e.sats < 10)              return ["medio", `Solo ${e.sats} satélites: la distancia va a salir peor. Si podés, esperá.`];
+  return ["ok", ""];
+}
 
+function pintarEstado(e) {
+  ultimo = e; ultimoMs = Date.now();
+  const [clase, alerta] = calidadGps(e);
+  const b = $("satBadge");
+  b.className = clase;
+  b.innerHTML = `${e.sats}<small>${e.calidad === "ok" ? "sat" : e.calidad === "ESTIMADO" ? "ESTIM." : "SIN FIX"}</small>`;
   const graba = e.sesion !== "NO GRABA";
-  $("tiempo").textContent = graba ? `${e.min}:${String(e.seg).padStart(2, "0")}` : "no";
-  $("sesion").textContent = graba ? e.sesion : "el pod no está grabando";
-  const pct = pctBateria(e.volt);
-  const resto = Math.round(pct * AUTONOMIA_MIN / 100);
-  $("bateria").textContent = pct + " %";
-  $("batTxt").textContent = `≈ ${Math.floor(resto / 60)} h ${String(resto % 60).padStart(2, "0")} min · ${e.volt.toFixed(2)} V`;
+  $("bTiempo").textContent = graba ? mmss(e.seg) : "no está grabando";
+  $("bSesion").textContent = graba ? e.sesion : "";
+  const pct = pctBateria(e.volt), resto = Math.round(pct * AUTONOMIA_MIN / 100);
+  $("bBateria").textContent = `batería ${pct} % · ≈ ${Math.floor(resto / 60)} h ${String(resto % 60).padStart(2, "0")} min`;
+  $("alerta").textContent = alerta;
+  $("alerta").className = alerta ? (clase === "medio" ? "medio" : "") : "oculto";
+  confirmarPendiente(e.marcas);
+}
 
-  if (marcasPod !== null && e.marcas > marcasPod) {
-    for (let i = marcasPod + 1; i <= e.marcas; i++) anotarMarca(i, e);
+// --- envio de ordenes con confirmacion (el pod suma 1 a "marcas" por orden) ---
+let pendiente = null;   // { esperado, alConfirmar, timer }
+async function enviar(orden, alConfirmar) {
+  if (!chComando) throw new Error("no hay conexión con el pod");
+  const base = ultimo ? ultimo.marcas : 0;
+  await chComando.writeValue(new TextEncoder().encode(orden));
+  if (pendiente) clearTimeout(pendiente.timer);
+  pendiente = { esperado: base + 1, alConfirmar,
+    timer: setTimeout(() => { pendiente = null; mostrarConfirma(false); }, 4000) };
+}
+function confirmarPendiente(marcas) {
+  if (pendiente && marcas >= pendiente.esperado) {
+    clearTimeout(pendiente.timer);
+    const f = pendiente.alConfirmar; pendiente = null;
+    mostrarConfirma(true); if (f) f();
   }
-  marcasPod = e.marcas;
-  $("nMarcas").textContent = e.marcas;
+}
+function mostrarConfirma(ok) {
+  const el = $("dConfirma");
+  el.style.color = ok ? "var(--ok)" : "var(--mal)";
+  el.textContent = ok ? "✓ el pod lo guardó" : "⚠ el pod no confirmó: revisá la conexión y probá de nuevo";
+  if (navigator.vibrate) navigator.vibrate(ok ? 60 : [80, 80, 80]);
+  if (ok) setTimeout(() => { if (el.textContent.startsWith("✓")) el.textContent = ""; }, 2500);
 }
 
-function anotarMarca(n, e) {
-  const li = document.createElement("li");
-  const hora = new Date().toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  li.textContent = `#${n}  ${hora}  ·  sesión ${e.min}:${String(e.seg).padStart(2, "0")}  ·  ${e.sats} sat`;
-  $("marcas").prepend(li);
+// --- conexion ---
+function mostrarConexion(si, txt) {
+  $("conexion").textContent = txt || (si ? "conectado" : "desconectado");
+  $("conexion").classList.toggle("si", si);
+  $("marcarLibre").disabled = !si;
+  actualizarBoton();
 }
-
 function alNotificar(ev) {
-  const txt = new TextDecoder().decode(ev.target.value);
-  const e = interpretar(txt);
-  if (e) pintar(e);
+  const e = interpretar(new TextDecoder().decode(ev.target.value));
+  if (e) pintarEstado(e);
 }
-
 async function engancharse() {
   mostrarConexion(false, "conectando…");
   const srv = await disp.gatt.connect();
@@ -198,34 +356,29 @@ async function engancharse() {
   await chEstado.startNotifications();
   try { alNotificar({ target: { value: await chEstado.readValue() } }); } catch (_) {}
   mostrarConexion(true);
-  ["vivo", "datos", "marcar", "listaMarcas"].forEach((id) => $(id).classList.remove("oculto"));
   $("conectar").classList.add("oculto");
   pedirPantallaPrendida();
 }
-
 async function conectar() {
   avisar("");
   try {
     disp = await navigator.bluetooth.requestDevice({
-      filters: [{ services: [SERVICIO] }, { namePrefix: "CanchaLab" }],
-      optionalServices: [SERVICIO],
-    });
+      filters: [{ services: [SERVICIO] }, { namePrefix: "CanchaLab" }], optionalServices: [SERVICIO] });
     disp.addEventListener("gattserverdisconnected", alDesconectar);
     await engancharse();
   } catch (err) {
     mostrarConexion(false);
-    if (err.name !== "NotFoundError")      // NotFoundError = cancelo la lista
+    if (err.name !== "NotFoundError")
       avisar("No se pudo conectar: " + err.message + ". ¿El pod está prendido y grabando (sin USB)?");
   }
 }
-
 async function alDesconectar() {
+  chComando = null;
   mostrarConexion(false, "se cortó, reconectando…");
   if (reintentando) return;
   reintentando = true;
   for (let i = 0; i < 30 && disp && !disp.gatt.connected; i++) {
-    try { await engancharse(); break; }
-    catch (_) { await new Promise((r) => setTimeout(r, 2000)); }
+    try { await engancharse(); break; } catch (_) { await new Promise((r) => setTimeout(r, 2000)); }
   }
   reintentando = false;
   if (!disp.gatt.connected) {
@@ -234,39 +387,180 @@ async function alDesconectar() {
     $("conectar").textContent = "Volver a conectar";
   }
 }
-
-async function marcar() {
-  if (!chComando) return;
-  $("marcar").disabled = true;
-  try {
-    await chComando.writeValue(new TextEncoder().encode("m"));
-    if (navigator.vibrate) navigator.vibrate(80);
-    $("marcar").textContent = "✓ MARCADO";
-    setTimeout(() => { $("marcar").textContent = "MARCAR"; }, 900);
-  } catch (err) {
-    avisar("No llegó la marca: " + err.message);
-  } finally {
-    setTimeout(() => { $("marcar").disabled = !(disp && disp.gatt.connected); }, 400);
-  }
-}
-
 async function pedirPantallaPrendida() {
-  try { if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); }
-  catch (_) {}
+  try { if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); } catch (_) {}
 }
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && disp && disp.gatt.connected) pedirPantallaPrendida();
 });
 
-// Si dejan de llegar datos, avisar: puede ser que el pod se apago o se fue de rango.
+// --- lista ---
+function hechasHoy(id) { return registro.filter((r) => r.id === id && r.fin && !r.anulada); }
+function pintarLista() {
+  const cont = $("lista");
+  cont.innerHTML = "";
+  for (const p of CATALOGO) {
+    if (p.grupo) { const h = document.createElement("h2"); h.textContent = p.grupo; cont.append(h); continue; }
+    const b = document.createElement("button");
+    b.className = "prueba" + (enCurso && enCurso.id === p.id ? " enCurso" : "");
+    const n = hechasHoy(p.id).length;
+    b.innerHTML = `<div class="nom">${p.nombre}<span>${p.corto || ""}</span></div>` +
+      (enCurso && enCurso.id === p.id ? `<div class="cuenta" style="color:var(--medio)">en curso</div>`
+        : n ? `<div class="cuenta">✓ ${n}</div>` : "");
+    b.addEventListener("click", () => abrir(p.id));
+    cont.append(b);
+  }
+  pintarRegistro();
+}
+function pintarRegistro() {
+  if (!registro.length) { $("registro").textContent = "todavía nada"; return; }
+  $("registro").textContent = registro.map((r) => {
+    const p = porId[r.id] || { nombre: "marca" };
+    const dur = r.fin ? mmss(r.fin.podSeg - r.inicio.podSeg) : "sin terminar";
+    const ver = Object.entries(r.verdad || {}).map(([k, v]) => `${k}=${v}`).join(" ");
+    return `${r.inicio.hora}  ${r.sesion}  #${r.id} ${p.nombre}  [${r.inicio.podSeg}s → ` +
+      `${r.fin ? r.fin.podSeg + "s" : "?"}] ${dur}  ${ver}${r.anulada ? "  ANULADA" : ""}` +
+      `  sat ${r.inicio.sats}${r.nota ? "  · " + r.nota : ""}`;
+  }).join("\n");
+}
+
+// --- detalle ---
+function abrir(id) {
+  abierta = porId[id];
+  $("vLista").classList.add("oculto");
+  $("vDetalle").classList.remove("oculto");
+  $("dTitulo").textContent = abierta.nombre;
+  $("dObjetivo").textContent = abierta.objetivo;
+  $("dPasos").innerHTML = abierta.pasos.map((s) => `<li>${s}</li>`).join("");
+  $("dCampos").innerHTML = (abierta.campos || []).map((c) =>
+    `<div class="campo"><label for="c_${c.k}">${c.etiqueta}</label>` +
+    `<input id="c_${c.k}" inputmode="decimal" value="${c.valor}"></div>`).join("");
+  $("dNota").value = "";
+  $("dConfirma").textContent = "";
+  pintarHechas();
+  actualizarBoton();
+  window.scrollTo(0, 0);
+}
+function cerrar() {
+  abierta = null;
+  $("vDetalle").classList.add("oculto");
+  $("vLista").classList.remove("oculto");
+  pintarLista();
+}
+function pintarHechas() {
+  const h = registro.filter((r) => r.id === abierta.id && r.fin);
+  $("dHechas").classList.toggle("oculto", !h.length);
+  $("dHechasLista").innerHTML = h.map((r, i) =>
+    `<li>${i + 1}. ${r.inicio.hora} · ${mmss(r.fin.podSeg - r.inicio.podSeg)} · ${r.inicio.sats} sat` +
+    `${r.anulada ? " · <span style='color:var(--mal)'>anulada</span>" : ""}</li>`).join("");
+}
+function actualizarBoton() {
+  const b = $("dBoton");
+  if (!abierta) return;
+  const conectado = !!chComando;
+  if (enCurso && enCurso.id === abierta.id) {
+    b.textContent = "TERMINAR"; b.className = "terminar"; b.disabled = !conectado;
+    $("dReloj").classList.remove("oculto");
+  } else {
+    b.textContent = enCurso ? `Primero terminá "${porId[enCurso.id].nombre}"` : "COMENZAR";
+    b.className = ""; b.disabled = !conectado || !!enCurso || !ultimo || ultimo.sesion === "NO GRABA";
+    $("dReloj").classList.add("oculto");
+  }
+}
+function leerVerdad(p) {
+  const v = Object.assign({}, p.verdad || {});
+  for (const c of p.campos || []) {
+    const x = $("c_" + c.k).value.trim().replace(",", ".");
+    if (x !== "") v[c.k] = isNaN(+x) ? x : +x;
+  }
+  return v;
+}
+const horaAhora = () => new Date().toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+async function tocarBoton() {
+  const p = abierta;
+  $("dBoton").disabled = true;
+  try {
+    if (!enCurso) {
+      const inicio = { hora: horaAhora(), podSeg: ultimo.seg, sats: ultimo.sats, calidad: ultimo.calidad };
+      await enviar("s" + p.id, () => {
+        enCurso = { id: p.id, desdeMs: Date.now(), idx: registro.length };
+        registro.push({ id: p.id, sesion: ultimo.sesion, inicio, fin: null,
+                        verdad: leerVerdad(p), nota: $("dNota").value.trim() });
+        guardar(); actualizarBoton(); pintarHechas();
+        if (p.duracion) autoFin = setTimeout(() => {
+          if (enCurso && enCurso.id === p.id) terminar(p).catch(() => mostrarConfirma(false));
+        }, p.duracion * 1000);
+      });
+    } else {
+      await terminar(p);
+    }
+  } catch (err) {
+    mostrarConfirma(false);
+  } finally {
+    setTimeout(actualizarBoton, 300);
+  }
+}
+async function terminar(p) {
+  clearTimeout(autoFin);
+  await enviar("e" + p.id, () => {
+    const r = registro[enCurso.idx];
+    r.fin = { hora: horaAhora(), podSeg: ultimo.seg };
+    if (abierta && abierta.id === p.id) {
+      r.verdad = leerVerdad(p);
+      const nota = $("dNota").value.trim(); if (nota) r.nota = nota;
+    }
+    enCurso = null;
+    guardar(); actualizarBoton(); pintarHechas();
+    if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
+  });
+}
+async function anularUltima() {
+  const h = registro.filter((r) => r.id === abierta.id && r.fin && !r.anulada);
+  if (!h.length) return;
+  if (!confirm("¿Anular la última vez que hiciste esta prueba? Queda guardada pero no se usa.")) return;
+  try {
+    await enviar("a" + abierta.id, () => { h[h.length - 1].anulada = true; guardar(); pintarHechas(); });
+  } catch (_) { mostrarConfirma(false); }
+}
+
+// reloj de la prueba en curso
 setInterval(() => {
-  if (!ultimoDato) return;
-  const s = Math.round((Date.now() - ultimoDato) / 1000);
-  $("viejo").textContent = s >= 4 ? `sin datos nuevos hace ${s} s` : "";
-}, 1000);
+  if (enCurso) {
+    const s = (Date.now() - enCurso.desdeMs) / 1000;
+    const p = porId[enCurso.id];
+    $("dReloj").textContent = p.duracion ? mmss(Math.max(0, p.duracion - s)) : mmss(s);
+  }
+  if (ultimoMs && Date.now() - ultimoMs > 4000) {
+    $("conexion").textContent = `sin datos nuevos hace ${Math.round((Date.now() - ultimoMs) / 1000)} s`;
+    $("conexion").classList.remove("si");
+  }
+}, 500);
 
 $("conectar").addEventListener("click", conectar);
-$("marcar").addEventListener("click", marcar);
+$("volver").addEventListener("click", cerrar);
+$("dBoton").addEventListener("click", tocarBoton);
+$("dAnular").addEventListener("click", anularUltima);
+$("marcarLibre").addEventListener("click", async () => {
+  try { await enviar("m", () => {
+    registro.push({ id: 0, sesion: ultimo.sesion, inicio: { hora: horaAhora(), podSeg: ultimo.seg, sats: ultimo.sats },
+                    fin: { hora: horaAhora(), podSeg: ultimo.seg }, nota: "marca suelta" });
+    guardar(); pintarRegistro(); if (navigator.vibrate) navigator.vibrate(60);
+  }); } catch (_) {}
+});
+$("copiar").addEventListener("click", async () => {
+  const txt = $("registro").textContent;
+  try { await navigator.clipboard.writeText(txt); $("copiar").textContent = "✓ Copiado"; }
+  catch (_) { $("copiar").textContent = "No se pudo: hacé captura"; }
+  setTimeout(() => { $("copiar").textContent = "Copiar registro"; }, 2000);
+});
+$("borrar").addEventListener("click", () => {
+  if (enCurso) return alert("Hay una prueba en curso: terminala primero.");
+  if (!confirm("¿Borrar el registro del celular? Lo que está grabado en el pod no se toca.")) return;
+  registro = []; guardar(); pintarLista();
+});
+
+pintarLista();
 </script>
 </body>
 </html>
