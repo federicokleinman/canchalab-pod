@@ -135,7 +135,6 @@
 // que NO se cambia ni se reusa un id: una prueba nueva lleva un numero nuevo.
 // La "verdad" es contra lo que se compara la medicion al analizar.
 // ---------------------------------------------------------------------------
-const VUELTA_PLAZA_M = 313.32;    // Plaza 12, medida en Google Maps
 const CATALOGO = [
   { grupo: "Antes de empezar: dónde va el pod" },
   { id: 1, nombre: "GPS en la mano", corto: "2 min quieto", duracion: 120,
@@ -156,41 +155,57 @@ const CATALOGO = [
     pasos: ["Poné el pod entre los omóplatos: debajo de una remera ajustada o en una mochila chica.",
             "Tocá COMENZAR y quedate quieto. Termina sola a los 2 minutos."] },
 
-  { grupo: "Recta de 100 m" },
-  { id: 10, nombre: "Caminar", corto: "A→B→A dos veces · 400 m", verdad: { m: 400 },
+  { grupo: "Recta: de A hasta un punto de giro B" },
+  { id: 10, nombre: "Caminar", corto: "A→B→A→B→A · 4 tramos", verdad: { m: 200 },
     objetivo: "Distancia caminando, donde el GPS da de menos.",
-    pasos: ["Parate en la punta A de la recta y quedate quieto unos segundos.",
-            "Tocá COMENZAR y caminá a ritmo normal hasta B, volvé a A, otra vez a B y de nuevo a A.",
-            "Pisá cada punta: el giro tiene que ser sobre la marca.",
-            "En A, tocá TERMINAR."] },
-  { id: 11, nombre: "Trote", corto: "A→B→A dos veces · 400 m", verdad: { m: 400 },
-    objetivo: "Distancia trotando.",
-    pasos: ["Desde A, quieto unos segundos.",
+    pasos: ["Marcá B con algo que veas (un cono, una mochila, un árbol) y anotá abajo a cuántos metros de A está.",
+            "Parate en A y quedate quieto unos segundos.",
+            "Tocá COMENZAR y caminá a ritmo normal A→B→A→B→A. Pisá cada marca: el giro tiene que ser sobre ella.",
+            "En A, tocá TERMINAR."],
+    campos: [{ k: "tramo", etiqueta: "Metros de A hasta B", valor: 50 }],
+    calcular: (v) => ({ m: 4 * v.tramo }) },
+  { id: 11, nombre: "Trote", corto: "A→B→A→B→A · 4 tramos", verdad: { m: 200 },
+    objetivo: "Distancia trotando. En la última salida dio 11% de más: hay que confirmarlo.",
+    pasos: ["Con B marcado y la distancia anotada abajo, quedate quieto en A unos segundos.",
             "Tocá COMENZAR y trotá A→B→A→B→A, girando sobre las marcas.",
-            "En A, tocá TERMINAR."] },
-  { id: 12, nombre: "Pique", corto: "40 m a fondo y trote hasta B · 100 m", verdad: { m: 100 },
+            "En A, tocá TERMINAR."],
+    campos: [{ k: "tramo", etiqueta: "Metros de A hasta B", valor: 50 }],
+    calcular: (v) => ({ m: 4 * v.tramo }) },
+  { id: 12, nombre: "Pique", corto: "40 m a fondo y trote hasta B", verdad: { m: 100 },
     objetivo: "Velocidad máxima, sprint y distancia a alta velocidad. Hacela 3 veces.",
     pasos: ["Desde A, quieto unos segundos.",
             "Tocá COMENZAR, guardá el celular y salí a fondo unos 40 m. Después seguí trotando hasta B.",
             "En B, tocá TERMINAR.",
-            "Volvé caminando a A sin apurarte (eso no es parte de la prueba) y repetí."] },
-  { id: 13, nombre: "Cambios de ritmo", corto: "A→B alternando · 100 m", verdad: { m: 100 },
+            "Volvé caminando a A sin apurarte (eso no es parte de la prueba) y repetí."],
+    campos: [{ k: "m", etiqueta: "Metros de A hasta B", valor: 100 }] },
+  { id: 13, nombre: "Cambios de ritmo", corto: "A→B alternando", verdad: { m: 100 },
     objetivo: "Aceleraciones y frenadas, como en un partido.",
     pasos: ["Desde A, quieto unos segundos.",
             "Tocá COMENZAR y andá hasta B alternando: unos 10 m trotando, unos 10 m a fondo, otra vez trote…",
-            "En B, tocá TERMINAR."] },
+            "En B, tocá TERMINAR."],
+    campos: [{ k: "m", etiqueta: "Metros de A hasta B", valor: 100 }] },
 
-  { grupo: "Vuelta a la plaza" },
-  { id: 20, nombre: "Vuelta caminando", corto: `${VUELTA_PLAZA_M} m`, verdad: { m: VUELTA_PLAZA_M },
-    objetivo: "Distancia con curvas y esquinas.",
-    pasos: ["Andá a la esquina donde empieza el recorrido que mediste en el mapa.",
-            "Tocá COMENZAR y caminá una vuelta por el mismo borde de la vereda, sin cortar esquinas.",
-            "Al volver a la misma esquina, tocá TERMINAR."] },
-  { id: 21, nombre: "Vuelta trotando", corto: `${VUELTA_PLAZA_M} m · hacela 2 veces`, verdad: { m: VUELTA_PLAZA_M },
-    objetivo: "Distancia con curvas a más velocidad.",
-    pasos: ["Desde la esquina de inicio, tocá COMENZAR.",
-            "Trotá una vuelta por el mismo recorrido, sin cortar esquinas.",
-            "En la esquina, tocá TERMINAR. Descansá y repetila."] },
+  // 20 y 21 eran la vuelta a la plaza (313 m medidos en Maps): se sacaron
+  // porque esa verdad no era confiable. Los ids quedan retirados.
+  { grupo: "Pista de atletismo (carril 1)" },
+  { id: 22, nombre: "Vuelta caminando", corto: "400 m · hacela 2 veces", verdad: { m: 400 },
+    objetivo: "Distancia con curvas, contra una verdad exacta.",
+    pasos: ["Parate sobre la línea de llegada, en el carril 1 (el de adentro).",
+            "Tocá COMENZAR y caminá una vuelta por el centro del carril 1, sin salirte.",
+            "Al pisar de nuevo la línea de llegada, tocá TERMINAR. Repetila."],
+    campos: [{ k: "m", etiqueta: "Metros de la vuelta", valor: 400 }] },
+  { id: 23, nombre: "Vuelta trotando", corto: "400 m · hacela 2 veces", verdad: { m: 400 },
+    objetivo: "Confirmar si el trote da de más (en la plaza dio +7 a +13%).",
+    pasos: ["Desde la línea de llegada, en el carril 1, tocá COMENZAR.",
+            "Trotá una vuelta por el centro del carril 1.",
+            "En la línea, tocá TERMINAR. Descansá y repetila."],
+    campos: [{ k: "m", etiqueta: "Metros de la vuelta", valor: 400 }] },
+  { id: 24, nombre: "Vuelta rápida", corto: "400 m · una vez", verdad: { m: 400 },
+    objetivo: "Distancia a ritmo alto y sostenido.",
+    pasos: ["Desde la línea de llegada, en el carril 1, tocá COMENZAR.",
+            "Corré una vuelta a ritmo fuerte pero que puedas sostener (no a fondo).",
+            "En la línea, tocá TERMINAR."],
+    campos: [{ k: "m", etiqueta: "Metros de la vuelta", valor: 400 }] },
 
   { grupo: "Movimientos de fútbol" },
   { id: 30, nombre: "Idas y vueltas 10 m", corto: "5 idas y vueltas · 100 m", verdad: { m: 100 },
@@ -252,6 +267,7 @@ let ultimo = null, ultimoMs = 0;          // ultimo estado del pod
 let enCurso = null;                       // { id, desdeMs, inicioPod, sesion }
 let abierta = null;                       // prueba en la vista detalle
 let autoFin = null;
+let terminando = false;   // ver terminar()
 
 // registro persistente (sobrevive a recargar la pagina)
 const CLAVE = "canchalab-registro-v1";
@@ -459,7 +475,8 @@ function actualizarBoton() {
   if (!abierta) return;
   const conectado = !!chComando;
   if (enCurso && enCurso.id === abierta.id) {
-    b.textContent = "TERMINAR"; b.className = "terminar"; b.disabled = !conectado;
+    b.textContent = terminando ? "terminando…" : "TERMINAR"; b.className = "terminar";
+    b.disabled = !conectado || terminando;
     $("dReloj").classList.remove("oculto");
   } else {
     b.textContent = enCurso ? `Primero terminá "${porId[enCurso.id].nombre}"` : "COMENZAR";
@@ -473,7 +490,7 @@ function leerVerdad(p) {
     const x = $("c_" + c.k).value.trim().replace(",", ".");
     if (x !== "") v[c.k] = isNaN(+x) ? x : +x;
   }
-  return v;
+  return p.calcular ? Object.assign(v, p.calcular(v)) : v;
 }
 const horaAhora = () => new Date().toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
@@ -501,9 +518,16 @@ async function tocarBoton() {
     setTimeout(actualizarBoton, 300);
   }
 }
+// Un solo "fin" por prueba: si ya se mando (por ejemplo, el fin automatico a
+// los 2 minutos) y se toca TERMINAR antes de que el pod confirme, no se repite.
 async function terminar(p) {
   clearTimeout(autoFin);
+  if (terminando) return;
+  terminando = true;
+  $("dBoton").disabled = true;
+  setTimeout(() => { terminando = false; actualizarBoton(); }, 4500);
   await enviar("e" + p.id, () => {
+    terminando = false;
     const r = registro[enCurso.idx];
     r.fin = { hora: horaAhora(), podSeg: ultimo.seg };
     if (abierta && abierta.id === p.id) {
