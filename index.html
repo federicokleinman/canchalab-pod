@@ -60,6 +60,9 @@
   .campo label { flex: 1; font-size: 15px; color: var(--tenue); }
   .campo input { width: 120px; font: inherit; font-size: 18px; padding: 8px 10px; border-radius: 10px;
     border: 1px solid var(--borde); background: #0f1115; color: var(--texto); text-align: right; }
+  .campo label small { font-size: 13px; }
+  button.chico { background: transparent; color: var(--azul); font-size: 14px; padding: 8px 0; margin-top: 4px; }
+  #dVerdad { margin: 10px 2px 4px; font-size: 15px; font-weight: 600; }
   textarea { width: 100%; font: inherit; font-size: 15px; padding: 8px 10px; border-radius: 10px;
     border: 1px solid var(--borde); background: #0f1115; color: var(--texto); margin-top: 6px; }
   #dBoton { width: 100%; padding: 30px 16px; font-size: 28px; font-weight: 700; margin-top: 16px; background: var(--ok); }
@@ -116,6 +119,7 @@
     <p id="dObjetivo"></p>
     <div class="panel"><ol id="dPasos"></ol></div>
     <div id="dCampos"></div>
+    <div id="dVerdad" class="tenue"></div>
     <textarea id="dNota" rows="2" placeholder="Nota (opcional): algo que salió distinto"></textarea>
     <div id="dReloj" class="oculto">0:00</div>
     <button id="dBoton" disabled>COMENZAR</button>
@@ -245,6 +249,90 @@ const CATALOGO = [
             "Frená después de la marca 2 y tocá TERMINAR.",
             "Más tarde, con el video, anotá abajo los segundos entre las dos marcas (lo podés completar en casa)."],
     campos: [{ k: "seg_video", etiqueta: "Segundos entre marcas (video)", valor: "" }] },
+
+  // Medidas de la cancha: vienen con las del reglamento (cancha de 11) pero
+  // las canchas amateur miden cualquier cosa, asi que son editables y se
+  // recuerdan entre pruebas y entre dias (campos con medida: true).
+  { grupo: "En la cancha" },
+  { id: 70, nombre: "Círculo central caminando", corto: "3 vueltas pisando la línea",
+    objetivo: "Curva cerrada y constante, con verdad exacta.",
+    pasos: ["Revisá abajo el radio del círculo (del centro a la línea). Si no es el de reglamento, corregilo.",
+            "Parate sobre la línea del círculo, quieto unos segundos. Tocá COMENZAR.",
+            "Caminá pisando la línea y contá las vueltas.",
+            "Al volver al mismo punto, tocá TERMINAR. Si hiciste otra cantidad de vueltas, corregila."],
+    campos: [{ k: "radio", etiqueta: "Radio del círculo (m)", valor: 9.15, medida: true },
+             { k: "vueltas", etiqueta: "Vueltas", valor: 3 }],
+    calcular: (v) => ({ m: +(2 * Math.PI * v.radio * v.vueltas).toFixed(1) }) },
+  { id: 71, nombre: "Círculo central trotando", corto: "3 vueltas pisando la línea",
+    objetivo: "Confirmar si el trote da de más, con una verdad exacta.",
+    pasos: ["Sobre la línea del círculo, quieto unos segundos. Tocá COMENZAR.",
+            "Trotá pisando la línea y contá las vueltas.",
+            "Al volver al mismo punto, tocá TERMINAR."],
+    campos: [{ k: "radio", etiqueta: "Radio del círculo (m)", valor: 9.15, medida: true },
+             { k: "vueltas", etiqueta: "Vueltas", valor: 3 }],
+    calcular: (v) => ({ m: +(2 * Math.PI * v.radio * v.vueltas).toFixed(1) }) },
+  { id: 72, nombre: "Círculo central rápido", corto: "3 vueltas pisando la línea",
+    objetivo: "Curva a ritmo alto: la más difícil para el GPS.",
+    pasos: ["Sobre la línea del círculo, quieto unos segundos. Tocá COMENZAR.",
+            "Corré rápido (no a fondo) pisando la línea y contá las vueltas.",
+            "Al volver al mismo punto, tocá TERMINAR."],
+    campos: [{ k: "radio", etiqueta: "Radio del círculo (m)", valor: 9.15, medida: true },
+             { k: "vueltas", etiqueta: "Vueltas", valor: 3 }],
+    calcular: (v) => ({ m: +(2 * Math.PI * v.radio * v.vueltas).toFixed(1) }) },
+  { id: 73, nombre: "Área grande caminando", corto: "la U del área, ida y vuelta",
+    objetivo: "Rectas con esquinas de 90°, como los cambios de dirección de un partido.",
+    pasos: ["Revisá abajo el fondo y el ancho del área. Si no son los de reglamento, corregilos.",
+            "Parate en la línea de fondo, donde arranca la línea del área. Quieto unos segundos, tocá COMENZAR.",
+            "Caminá pisando la línea del área: hacia adelante, cruzá todo el ancho y volvé a la línea de fondo (una U).",
+            "Hacé la U de vuelta hasta donde empezaste y tocá TERMINAR."],
+    campos: [{ k: "area_fondo", etiqueta: "Fondo del área (m)", valor: 16.5, medida: true },
+             { k: "area_ancho", etiqueta: "Ancho del área (m)", valor: 40.32, medida: true },
+             { k: "u", etiqueta: "Cantidad de U", valor: 2 }],
+    calcular: (v) => ({ m: +((2 * v.area_fondo + v.area_ancho) * v.u).toFixed(1) }) },
+  { id: 74, nombre: "Área grande trotando", corto: "la U del área, ida y vuelta",
+    objetivo: "Esquinas de 90° trotando.",
+    pasos: ["En la línea de fondo, donde arranca la línea del área. Quieto unos segundos, tocá COMENZAR.",
+            "Trotá la U pisando la línea, ida y vuelta, frenando en cada esquina.",
+            "Donde empezaste, tocá TERMINAR."],
+    campos: [{ k: "area_fondo", etiqueta: "Fondo del área (m)", valor: 16.5, medida: true },
+             { k: "area_ancho", etiqueta: "Ancho del área (m)", valor: 40.32, medida: true },
+             { k: "u", etiqueta: "Cantidad de U", valor: 2 }],
+    calcular: (v) => ({ m: +((2 * v.area_fondo + v.area_ancho) * v.u).toFixed(1) }) },
+  { id: 75, nombre: "Pique al punto penal", corto: "pique corto · hacela 5 veces",
+    objetivo: "Arranques cortos y explosivos, como los de un partido.",
+    pasos: ["Revisá abajo la distancia de la línea de fondo al punto penal.",
+            "Parate en la línea de fondo, frente al punto penal. Quieto unos segundos, tocá COMENZAR.",
+            "Pique a fondo hasta el punto penal y frená ahí.",
+            "Tocá TERMINAR, volvé caminando y repetí."],
+    campos: [{ k: "penal", etiqueta: "Línea de fondo al punto penal (m)", valor: 11, medida: true }],
+    calcular: (v) => ({ m: v.penal }) },
+  { id: 76, nombre: "Pique a la línea del área", corto: "pique corto · hacela 5 veces",
+    objetivo: "Un pique un poco más largo, también desde parado.",
+    pasos: ["Parate en la línea de fondo. Quieto unos segundos, tocá COMENZAR.",
+            "Pique a fondo derecho hasta la línea del área grande y frená ahí.",
+            "Tocá TERMINAR, volvé caminando y repetí."],
+    campos: [{ k: "area_fondo", etiqueta: "Fondo del área (m)", valor: 16.5, medida: true }],
+    calcular: (v) => ({ m: v.area_fondo }) },
+  { id: 77, nombre: "Las 4 líneas de la cancha", corto: "una vuelta caminando · para el mapa",
+    objetivo: "Ver si el mapa dibuja bien la cancha: forma, esquinas y orientación.",
+    pasos: ["Parate en una esquina (el banderín). Quieto unos segundos, tocá COMENZAR.",
+            "Caminá toda la vuelta por las líneas de afuera, pisándolas, hasta la misma esquina.",
+            "Tocá TERMINAR. Si sabés el largo y el ancho, anotalos: así también sirve para la distancia."],
+    campos: [{ k: "largo", etiqueta: "Largo de la cancha (m), si lo sabés", valor: "", medida: true },
+             { k: "ancho", etiqueta: "Ancho de la cancha (m), si lo sabés", valor: "", medida: true }],
+    calcular: (v) => (typeof v.largo === "number" && typeof v.ancho === "number"
+                        ? { m: +(2 * (v.largo + v.ancho)).toFixed(1) } : {}) },
+  { id: 78, nombre: "Parado como suplente", corto: "3 min quieto · tiene que dar 0", verdad: { m: 0 },
+    duracion: 180,
+    objetivo: "Que no sume metros fantasma estando parado.",
+    pasos: ["Con el pod donde lo llevás siempre, parate o sentate en el banco o al costado.",
+            "Tocá COMENZAR y quedate quieto. Termina sola a los 3 minutos."] },
+  { id: 79, nombre: "Picado / partido", corto: "la prueba final",
+    objetivo: "Todo junto, en juego real. Si tenés reloj o Strava, prendelo también.",
+    pasos: ["Antes de arrancar, tocá COMENZAR.",
+            "Jugá normal. No hace falta tocar nada más.",
+            "Al terminar, tocá TERMINAR y anotá abajo lo que marcó el reloj, si usaste."],
+    campos: [{ k: "reloj_m", etiqueta: "Distancia del reloj o Strava (m), si usaste", valor: "" }] },
 
   { grupo: "Libre" },
   { id: 60, nombre: "Prueba libre", corto: "cualquier otra cosa",
@@ -448,9 +536,24 @@ function abrir(id) {
   $("dTitulo").textContent = abierta.nombre;
   $("dObjetivo").textContent = abierta.objetivo;
   $("dPasos").innerHTML = abierta.pasos.map((s) => `<li>${s}</li>`).join("");
-  $("dCampos").innerHTML = (abierta.campos || []).map((c) =>
-    `<div class="campo"><label for="c_${c.k}">${c.etiqueta}</label>` +
-    `<input id="c_${c.k}" inputmode="decimal" value="${c.valor}"></div>`).join("");
+  const campos = abierta.campos || [];
+  $("dCampos").innerHTML = campos.map((c) =>
+    `<div class="campo"><label for="c_${c.k}">${c.etiqueta}` +
+    (c.medida && c.valor !== "" ? ` <small class="tenue">· reglamento ${c.valor}</small>` : "") +
+    `</label><input id="c_${c.k}" inputmode="decimal" value="${valorCampo(c)}"></div>`).join("") +
+    (campos.some((c) => c.medida && c.valor !== "")
+      ? `<button id="dReglamento" class="chico">Volver a las medidas del reglamento</button>` : "");
+  for (const c of campos) $("c_" + c.k).addEventListener("input", () => {
+    if (c.medida) guardarMedida(c, $("c_" + c.k).value);
+    pintarVerdad();
+  });
+  if ($("dReglamento")) $("dReglamento").addEventListener("click", () => {
+    for (const c of campos) if (c.medida && c.valor !== "") {
+      $("c_" + c.k).value = c.valor; guardarMedida(c, "");
+    }
+    pintarVerdad();
+  });
+  pintarVerdad();
   $("dNota").value = "";
   $("dConfirma").textContent = "";
   pintarHechas();
@@ -487,10 +590,35 @@ function actualizarBoton() {
 function leerVerdad(p) {
   const v = Object.assign({}, p.verdad || {});
   for (const c of p.campos || []) {
-    const x = $("c_" + c.k).value.trim().replace(",", ".");
+    const el = $("c_" + c.k);
+    let x = (el ? el.value : String(valorCampo(c))).trim().replace(",", ".");
+    if (x === "") x = String(c.valor);           // vacio = la de reglamento
     if (x !== "") v[c.k] = isNaN(+x) ? x : +x;
   }
-  return p.calcular ? Object.assign(v, p.calcular(v)) : v;
+  if (p.calcular) {
+    const extra = p.calcular(v);
+    for (const [k, x] of Object.entries(extra)) if (typeof x === "number" && isFinite(x)) v[k] = x;
+  }
+  return v;
+}
+
+// Medidas de la cancha que puso el usuario: se recuerdan entre pruebas y dias.
+const CLAVE_MEDIDAS = "canchalab-medidas-v1";
+let medidas = {};
+try { medidas = JSON.parse(localStorage.getItem(CLAVE_MEDIDAS) || "{}"); } catch (_) { medidas = {}; }
+function valorCampo(c) {
+  return c.medida && medidas[c.k] != null ? medidas[c.k] : c.valor;
+}
+function guardarMedida(c, txt) {
+  const x = txt.trim().replace(",", ".");
+  if (x === "" || x === String(c.valor)) delete medidas[c.k]; else medidas[c.k] = x;
+  localStorage.setItem(CLAVE_MEDIDAS, JSON.stringify(medidas));
+}
+function pintarVerdad() {
+  const v = leerVerdad(abierta), el = $("dVerdad");
+  const fmt = (n) => String(n).replace(".", ",");
+  el.textContent = typeof v.m === "number" ? `Distancia de verdad: ${fmt(v.m)} m`
+    : typeof v.saltos === "number" ? `Saltos de verdad: ${v.saltos}` : "";
 }
 const horaAhora = () => new Date().toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
